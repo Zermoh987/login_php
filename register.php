@@ -19,7 +19,7 @@
             $nom = $email = $prenom =  $password = "";
 
             if(isset($_POST['valider'])){
-
+                
                 if (empty($_POST["nom"]) && empty($_POST["prenom"]) && empty($_POST["email"]) && empty($_POST["passe"])) {
                     $nomErr = "* veuillez entrer votre nom";
                     $prenomErr = "* veuillez entrer votre prénom";
@@ -29,24 +29,43 @@
                     $nom = test_input($_POST["nom"]);
                     $prenom = test_input($_POST["prenom"]);
                     $email = test_input($_POST["email"]);
-                    $password = test_input($_POST["passe"]); 
+                    $password = test_input($_POST["passe"]);
 
                 //On insère les données reçues
                     if(preg_match("/[a-zA-Z0-9]/", $password) && filter_var($email, FILTER_VALIDATE_EMAIL) && preg_match("/^[a-zA-Z-' ]*$/",$prenom) && preg_match("/^[a-zA-Z-' ]*$/",$nom)){
-                        $sth = $dbco->prepare("INSERT INTO utilisateu(nom,prenom,email,passe) VALUES(:nom,:prenom,:email,:passe)");
-                        $sth->bindParam(':nom',$nom);
-                        $sth->bindParam(':prenom',$prenom);
-                        $sth->bindParam(':email',$email);
-                        $sth->bindParam(':passe',$password);
-                        $sth->execute(); 
+                        
+                        $sql = "SELECT * FROM utilisateu WHERE email = '$email'";
+                        $result = $dbco->prepare($sql);
+                        $result->execute();
+                        $data = $result->fetchAll();
+
+                        $sqls = "SELECT * FROM administrateur WHERE email = '$email'";
+                        $result = $dbco->prepare($sqls);
+                        $result->execute();
+                        $data = $result->fetchAll();
+
+                        if ($data) {
+                            $emailErr = "Cette adresse email est déjà utilisé";
+                        }else {
+                            try{
+                                $sth = $dbco->prepare("INSERT INTO utilisateu(nom,prenom,email,passe) VALUES(:nom,:prenom,:email,:passe)");
+                                $sth->bindParam(':nom',$nom);
+                                $sth->bindParam(':prenom',$prenom);
+                                $sth->bindParam(':email',$email);
+                                $sth->bindParam(':passe',$password);
+                                $sth->execute();
+                            }catch(PDOException $e){
+                                $e="erreur";
+                            }
+                            header('location:login.php'); 
+                        }
                     }else {
                         $nomErr = "Seules les lettres et les espaces blancs sont autorisés";
                         $prenomErr = "Seules les lettres et les espaces blancs sont autorisés";
                         $emailErr = "Format d'email invalide";
                         $passwordErr  = "* veuillez entrer";
                     }
-                }
-                header("lacation: connecter.php");      
+                }     
             }
         ?>
         <div class="container">
@@ -85,13 +104,13 @@
                                 <input type="checkbox" class="form-check-input" name="afficher">
                                 <label for="" class="ms-2">Afficher le mot de passe</label>
                             </div>
-                            <input type="submit" class="btn btn-primary form-control mb-3" value="Cr&eacute;er un compte moz" name="valider">
+                            <input type="submit" class="btn btn-primary form-control mb-3" value="Cr&eacute;er un compte moz" name="valider" href='mail.php'>
                         </div>
                         <small>
                             <p>En créant un compte, vous acceptez les <a href="">Conditions
                             d'utilisation</a> et l' <a href="">Avis de confidentialité</a> de Moz .</p>
 
-                            <p>Vous avez déjà un compte? <a href="connecter.php">S'identifier</a></p>
+                            <p>Vous avez déjà un compte? <a href="login.php">S'identifier</a></p>
                         </small>
                     </form>
 
